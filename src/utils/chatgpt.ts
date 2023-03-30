@@ -25,33 +25,46 @@
 //     return null;
 //   }
 // }
-import * as OpenAI from 'openai';
+//import * as OpenAI from 'openai';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 export async function generateCode(prompt: string): Promise<string | null> {
-    const openai = new OpenAI(process.env.OPENAI_API_KEY);
+    //const openai = new OpenAI(process.env.OPENAI_API_KEY);
+    const openai = require('openai');
+    openai.api_key = process.env.OPENAI_API_KEY;
     const promptWithCodeGeneration = `Generate code for: ${prompt}`;
 
-  const response = await openai.complete({
-    engine: 'text-davinci-002',
-    prompt: promptWithCodeGeneration,
-    maxTokens: 2048,
-    temperature: 0.5,
-    n: 1,
-    stop: '\n',
-  });
+    const response = await openai.completions.create({
+        engine: 'text-davinci-002',
+        prompt: promptWithCodeGeneration,
+        max_tokens: 2048,
+        n: 1,
+        stop: ['\n'],
+        temperature: 0.5,
+      });
+    const { choices } = response.data;
+    if (!choices || choices.length === 0) {
+        return null;
+    }
 
-  const { choices } = response.data;
-  if (!choices || choices.length === 0) {
-    return null;
-  }
+    const generatedCode = choices[0].text.trim();
 
-  const generatedCode = choices[0].text.trim();
+    // Check if the generated code looks reasonable
+    if (!generatedCode || generatedCode.startsWith('Traceback')) {
+        return null;
+    }
 
-  // Check if the generated code looks reasonable
-  if (!generatedCode || generatedCode.startsWith('Traceback')) {
-    return null;
-  }
-
-  return generatedCode;
+    return generatedCode;
+      //const message = completions.choices[0].text.trim();
+      //return message;
+//   const response = await openai.complete({
+//     engine: 'text-davinci-002',
+//     prompt: promptWithCodeGeneration,
+//     maxTokens: 2048,
+//     temperature: 0.5,
+//     n: 1,
+//     stop: '\n',
+//   });
 }
